@@ -1,0 +1,138 @@
+@Override
+    public void extendComponents(Bundle savedInstanceState) {
+        super.extendComponents(savedInstanceState);
+        super.setupWizardLayout();
+        if (getResources() != null) {
+            boolean isTablet = getResources().getBoolean(R.bool.isTablet);
+            CommonUtils.setIsTablet(isTablet);
+        }
+
+        MFAppContext.getInstance().disableAPN();
+        // Clears SystemParamsUtil singleton object when app is relaunched..
+        MonitoringUtils.authenticationUUID = MonitoringUtils.genrateUUID();
+        if (!TextUtils.isEmpty(sharedPreferencesUtil.getfiosOnlyContext()) && !TextUtils.isEmpty(sharedPreferencesUtil.getNSArequestURL())) {
+            launchAppAction.setRequestUrl(sharedPreferencesUtil.getNSArequestURL());
+        } else {
+            mvmPreferenceRepository.save(Constants.FIOS_ONLY_NSA_URL, StringUtils.EMPTY);
+            sharedPreferencesUtil.setNSArequestURL(StringUtils.EMPTY);
+            mvmPreferenceRepository.save(Constants.FIOS_ONLY_APPCONTEXT, StringUtils.EMPTY);
+            sharedPreferencesUtil.setfiosOnlyContext(StringUtils.EMPTY);
+        }
+        if (getIntent().getExtras() != null) {
+            String requestUrl = getIntent().getExtras().getString("requesturl");
+            if (StringUtils.isNotEmpty(requestUrl))
+                launchAppAction.setRequestUrl(requestUrl);
+        }
+
+        SystemParamsUtil.resetSystemParamUtilInstance();
+        com.vzw.hss.mvm.common.utils.CommonUtils.MFSWITCH_PREPAY = false;
+        popDataSessionManager.clear();
+        weakReferenceActivity = new WeakReference<SetUpActivity>(this);
+        try {
+//            CookieManager.getInstance().removeSessionCookies(null);
+//            CookieManager.getInstance().flush();
+            MobileFirstApplication.getLogHandler().e(TAG, "Remove cookies at launch");
+        } catch (Exception e) {
+            MobileFirstApplication.getLogHandler().d(TAG, e.getMessage());
+        }
+
+        mToolbar = findViewById(R.id.toolbar);
+        tabBarAtomView = findViewById(R.id.bottomTab);
+        headerDivider = (View) findViewById(R.id.line_divider);
+        fabIcon = findViewById(R.id.support_chat_head);
+        fabIconWithText = findViewById(R.id.support_chat_head_with_text);
+        mLinearLayoutMain = (RelativeLayout) findViewById(R.id.activity_home_main_linear_Layout);
+        mHeaderName = (MFTextView) findViewById(R.id.ubiquitous_title_text_view);
+        topNotificationFragment = (TopNotificationFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_notificationOverlayTop);
+        notificationOverlay = (NotificationOverlay) findViewById(R.id.notificationOverlay);
+        if (CommonUtils.isTablet())
+            activity_home_main_container = (LinearLayout) findViewById(R.id.activity_home_main_container);
+        else
+            activity_home_main_container = (FrameLayout) findViewById(R.id.activity_home_main_container);
+        headerDivider = (View) findViewById(R.id.line_divider);
+        mCartIcon = (ImageView) mToolbar.findViewById(R.id.toolbar_Icon2);
+        mWishListIcon = mToolbar.findViewById(R.id.rl_wishlist);
+        ivWishListIcon = mToolbar.findViewById(R.id.iv_wishlist_icon);
+        tvWishListCount = mToolbar.findViewById(R.id.tv_wishlist_count);
+        ivWishListIcon = mToolbar.findViewById(R.id.iv_wishlist_icon);
+        mCommunityIcon = (ImageView) mToolbar.findViewById(R.id.toolbar_icon_community);
+        useDummySSO = getIntent().getBooleanExtra(Constants.EXTRA_KEY_DUMMY_SSO, false);
+        sendXMDN = MVMSettings.getInstance().getSettingBoolean("XMDN_FLAG");
+        if (isPackageInstalled()) {
+            sharedPreferencesUtil.isMyVZServices(true);
+        }
+//        getXMDNResponse();
+        MFAppContext.getInstance().setActivityTag(this.getClass().getName());
+        MFAppContext.getInstance().setDeviceDensity(getResources().getDisplayMetrics().density);
+        MFAppContext.getInstance().removeProperty(MyFeedFragment.IS_FEED_FETCHED);
+        MFAppContext.getInstance().setPrepayContext(false);
+        setStatusBarColor();
+        startLaunchAppFlow(false);
+
+        shouldShowToolbarAlways = true;
+        disableToolBar();// case to hide toolbar by default
+        if (GlobalContextSingleton.INSTANCE.isTabBarFlowEnabled()) {
+            findViewById(R.id.tabBardivider).setVisibility(View.VISIBLE);
+            RelativeLayout relativeLayout = findViewById(R.id.rl_support);
+            LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) relativeLayout.getLayoutParams();
+            layoutParams.rightMargin = getResources().getDimensionPixelSize(R.dimen.dimen_brand_refresh_margin_right);
+        }
+
+        hideChatIcons();
+        disableNavigationDrawer();
+
+
+        if (mCommunityIcon != null) mCommunityIcon.setOnClickListener(this);
+        mCartIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UtilLog.d(TAG, "toolbar_Icon2 called");
+                Action action = (Action) view.getTag();
+                if (action != null)
+                    handleCartAction(action);
+            }
+        });
+
+        mWishListIcon.setOnClickListener(view -> {
+            Action action = (Action) view.getTag();
+            if (action != null) {
+                launchApplicationPresenter.executeAction(action);
+            }
+        });
+
+        mToolbar.findViewById(R.id.toolbar_Icon1).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (getCurrentFragment() != null && getCurrentFragment() instanceof SendTicketFragment) {
+                    // Log.i("LLL","Check the logs::::");
+
+                    ((SendTicketFragment) getCurrentFragment()).onItemClick(false);
+
+                } else {
+                    UtilLog.d(TAG, "toolbar_Icon1 clicked");
+                    //close(NotificationOverlay.ViewType.InStore);
+                    SupportUtils.FLOW_TYPE = Constants.ADOBE_VALUE_SUPPORT_LINK;
+                    if (preApprovalAction != null) {
+                        setupBasePresenter.executeSlientRequest(preApprovalAction);
+                        preApprovalAction = null;
+                    }
+                    trackToolBarAction(Constants.ADOBE_VALUE_SUPPORT_LINK);
+                    openSupport(SupportRequest.FROM_ICON_SEARCH);
+                }
+            }
+        });
+//        mToolbar.findViewById(R.id.gif_animation_view).setOnClickListener(this);
+        mToolbar.setNavigationOnClickListener(v -> {
+            if (getCurrentFragment() != null && getCurrentFragment() instanceof SendTicketFragment) {
+                // Log.i("LLL","Check the logs::::");
+
+                ((SendTicketFragment) getCurrentFragment()).onItemClick(true);
+
+            } else {
+                trackToolBarAction(Constants.ADOBE_VALUE_NAV_LINK);
+                mDrawerLayout.openDrawer(GravityCompat.START);
+            }
+
+            //close(NotificationOverlay.ViewType.SafetyMode);
+        });
+    }
