@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/toolbar"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:background="@color/white"
+    android:contentInsetStart="0dp"
+    android:paddingStart="0dp"
+    android:paddingEnd="0dp"
+    android:elevation="1dp"
+    app:contentInsetStart="-10dp">
+
+    <RelativeLayout
+        android:id="@+id/rootRl"
+        android:layout_width="match_parent"
+        android:layout_height="60dp">
+
+        <LinearLayout
+            android:id="@+id/left_button_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+
+            android:layout_gravity="start"
+            android:gravity="start"
+            android:orientation="horizontal">
+
+        </LinearLayout>
+
+        <com.vzw.android.component.ui.MFTextView
+            android:id="@+id/ubiquitous_title_text_view"
+            style="@style/style_toolbar.MVA3_0_Header_MF"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_gravity="start"
+            android:layout_marginStart="@dimen/view_margin_sixteen_dp"
+            android:layout_marginEnd="@dimen/view_margin_sixteen_dp"
+            android:layout_toEndOf="@id/left_button_container"
+            android:ellipsize="end"
+            android:maxWidth="250dp"
+            android:singleLine="true"
+            android:text=" "
+            tools:text="Verizon Visa® Card"
+            tools:textColor="@color/black" />
+
+        <ImageView
+            android:id="@+id/ubiquitous_title_image_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_gravity="center"
+            android:layout_marginStart="@dimen/view_margin_twenty_dp"
+            android:layout_marginEnd="@dimen/view_margin_twenty_dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/titleViewContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_gravity="center"
+            android:layout_marginStart="@dimen/view_margin_twenty_dp"
+            android:layout_marginEnd="@dimen/view_margin_twenty_dp"
+            android:orientation="horizontal"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/menu_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_gravity="right"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/cartContainerLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/view_margin_sixteen_dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/toolbar_cart"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/mf_cart"
+                    android:visibility="gone" />
+
+
+<!--                <com.vzw.android.component.ui.MFTextView-->
+<!--                    android:id="@+id/cartCountLeft"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_gravity="center"-->
+<!--                    android:fontFamily="@font/verizonnhgetx_bold"-->
+<!--                    android:paddingTop="5dp"-->
+<!--                    android:textColor="@color/black"-->
+<!--                    android:textSize="8sp"-->
+<!--                    android:visibility="gone"-->
+<!--                    tools:text="11" />-->
+            </FrameLayout>
+            <RelativeLayout
+                android:id="@+id/rl_wishlist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="@dimen/view_margin_sixteen_dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/iv_wishlist_icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/heart_blank"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/tv_wishlist_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="1"
+                    android:textColor="@color/black"
+                    android:textSize="8sp"
+                    android:visibility="gone" />
+            </RelativeLayout>
+            <FrameLayout
+                android:id="@+id/cartContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/view_margin_sixteen_dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/toolbar_Icon2"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/mf_cart"
+                    android:visibility="gone" />
+
+<!--                <com.vzw.android.component.ui.MFTextView-->
+<!--                    android:id="@+id/cartCount"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_gravity="center"-->
+<!--                    android:fontFamily="@font/verizonnhgetx_bold"-->
+<!--                    android:paddingTop="5dp"-->
+<!--                    android:textColor="@color/black"-->
+<!--                    android:textSize="8sp"-->
+<!--                    android:visibility="gone"-->
+<!--                    tools:text="11" />-->
+            </FrameLayout>
+            <RelativeLayout
+                android:id="@+id/rl_support"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="@dimen/view_margin_sixteen_dp">
+
+                <ImageView
+                    android:id="@+id/toolbar_Icon1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:contentDescription="@string/btn_support"
+                    android:src="@drawable/mf_support_new"
+                    android:visibility="gone"
+                    tools:visibility="gone" />
+
+
+                <TextView
+                    android:id="@+id/chat_number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text=""
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    tools:visibility="gone" />
+            </RelativeLayout>
+
+
+            <ImageView
+                android:id="@+id/toolbar_icon_community"
+                android:layout_width="28dp"
+                android:layout_height="26dp"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="@dimen/view_margin_sixteen_dp"
+                android:contentDescription="@string/btn_community"
+                android:src="@drawable/icon_nav_community_selected"
+                android:visibility="gone"
+                tools:visibility="gone" />
+
+        </LinearLayout>
+    </RelativeLayout>
+
+
+</androidx.appcompat.widget.Toolbar>
