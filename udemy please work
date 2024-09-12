@@ -11,3 +11,28 @@ https://urldefense.proofpoint.com/v2/url?u=https-3A__e2.udemymail.com_ls_click-3
 
             }
         });
+
+
+        <ImageView
+            android:id="@+id/toolbar_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity= "end|center_vertical"
+            android:layout_alignParentRight="false"
+            android:layout_alignRight="@+id/menu_layout"
+            android:layout_toEndOf="@id/left_button_container"
+            android:layout_centerVertical="true"
+            android:padding="8dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/bookmark"/>
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M17,3H7c-1.1,0 -1.99,0.9 -1.99,2L5,21l7,-3 7,3V5c0,-1.1 -0.9,-2 -2,-2z"/>
+</vector>
