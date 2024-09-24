@@ -1,0 +1,956 @@
+Now I am about to give you a sample of all the files required to create a ui fragment in my codebase using MVP architecture
+First We need toi map page type in the JSON file with a converter
+public static final String SETUP_MULTI_USER = "multiUserSignIn";
+RESPONSE_MAPPING.put(SETUP_MULTI_USER, MultiUserConverter.class);
+
+now the MultiUserConverter class is
+package com.vzw.mobilefirst.setup.assemblers;
+
+import com.vzw.mobilefirst.commons.utils.JsonSerializationHelper;
+import com.vzw.mobilefirst.core.assemblers.BusinessErrorConverter;
+import com.vzw.mobilefirst.core.assemblers.SetupActionConverter;
+import com.vzw.mobilefirst.core.models.Action;
+import com.vzw.mobilefirst.core.models.AuthenticationForm;
+import com.vzw.mobilefirst.core.models.ChangePlatformResponse;
+import com.vzw.mobilefirst.core.models.Converter;
+import com.vzw.mobilefirst.core.models.RememberMeAuthenticationForm;
+import com.vzw.mobilefirst.core.models.SimpleAuthenticationForm;
+import com.vzw.mobilefirst.core.models.TokenAuthenticationForm;
+import com.vzw.mobilefirst.setup.models.signin.MultiUserModel;
+import com.vzw.mobilefirst.setup.models.signin.MultiUserPageModel;
+import com.vzw.mobilefirst.setup.models.signin.UserDataExtraInfoModel;
+import com.vzw.mobilefirst.setup.models.signin.UserDataModel;
+import com.vzw.mobilefirst.setup.net.responses.signin.MultiUserResponse;
+import com.vzw.mobilefirst.setup.net.tos.ButtonActionWithParams;
+import com.vzw.mobilefirst.setup.net.tos.signin.MultiUserModuleMap;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Created by mallakr on 2/13/2016.
+ */
+public class MultiUserConverter implements Converter {
+
+    public static final String CHANGE_APPLICATION_ACTION = "switchApp";
+
+    public static final String ACCESS_MANAGER_AUTHENTICATION = "AM";
+
+    public static final String AUTH_TYPE_REMEMBER_ME = "REMEMBER_ME";
+
+    public static final String MDN_AUTH_TYPE = "mdnAuthType";
+    public static final String USER_NAME = "userName";
+    public static final String PASSWORD = "password";
+    public static final String H = "h";
+    public static final String U = "u";
+    public static final String M = "m";
+    public static final String SELECTED_LOGIN_TYPE = "selectedLoginType";
+    public static final String MDN = "mdn";
+    public static final String SSO_TOKEN = "SSOToken";
+
+    @Override
+    public MultiUserModel convert(String jsonResponse) {
+
+        MultiUserResponse response =
+                JsonSerializationHelper.deserializeObject(MultiUserResponse.class,
+                        jsonResponse);
+
+        MultiUserPageModel pageModel = new MultiUserPageModel(SetupPageConverterUtil.
+                getBasePageData(response.getMultiUserPage()));
+
+        pageModel.setUserList(toModel(response.getMultiUserModuleMap()));
+
+        MultiUserModel multiUserModel = new MultiUserModel
+                (SetupPageConverterUtil.getHeaderData(response.getMultiUserPage())
+                        , pageModel
+                        , SetupPageConverterUtil.getFooterData(response.getMultiUserPage())
+                        , BusinessErrorConverter.toModel(response.getResponseInfo())
+                        , SetupPageConverterUtil.generatePageMapModel(response.getPageMap()));
+
+
+        return multiUserModel;
+    }
+
+    public static List<UserDataModel> toModel(MultiUserModuleMap multiUserModuleMap) {
+
+        List<UserDataModel> userList = new ArrayList<>();
+
+        if (multiUserModuleMap != null) {
+
+            if (multiUserModuleMap.getUserDetailsList() != null) {
+                List<ButtonActionWithParams> userDetails = multiUserModuleMap.getUserDetailsList().getUserDetails();
+
+                if (userDetails != null) {
+                    generateUserListModel(userDetails, userList);
+                }
+
+            }
+
+
+        }
+
+        return userList;
+    }
+
+
+    private static void generateUserListModel(List<ButtonActionWithParams> userList, List<UserDataModel> userListAction) {
+
+        for (int i = 0; i < userList.size(); i++) {
+
+            ButtonActionWithParams details = userList.get(i);
+
+            UserDataModel action = generateOpenPageActionModel(details);
+
+            if (action != null) {
+                userListAction.add(action);
+            }
+
+        }
+
+    }
+
+    private static UserDataModel generateOpenPageActionModel(ButtonActionWithParams userDetails) {
+
+        Map<String, Object> extraParameters = userDetails.getExtraParameters();
+        String username = (null == extraParameters.get(USER_NAME))? null:extraParameters.get(USER_NAME).toString();
+        String mdn_auth_type = (null == extraParameters.get(MDN_AUTH_TYPE))? null:extraParameters.get(MDN_AUTH_TYPE).toString();
+        String mdn = (null == extraParameters.get(MDN))? null:extraParameters.get(MDN).toString();
+        UserDataExtraInfoModel extraInfoModel = null;
+        if (extraParameters != null) {
+            extraInfoModel = new UserDataExtraInfoModel(mdn
+                    , username
+                    , userDetails.getImgName()
+                    , mdn_auth_type);
+        }
+
+        Action action = SetupActionConverter.toModel(userDetails);
+        HashMap<String, String> extraparams = new HashMap<>();
+        for(Map.Entry<String, Object> entry : extraParameters.entrySet()){
+            if(entry.getValue() instanceof String) {
+                extraparams.put(entry.getKey(), (String) entry.getValue());
+            }
+        }
+        action.setExtraParams(extraparams);
+        action.setImageName(userDetails.getImgName());
+        action.setMessage(userDetails.getMsg());
+        UserDataModel userDataModel = new UserDataModel(action, extraInfoModel);
+
+        if (extraParameters != null && CHANGE_APPLICATION_ACTION.equalsIgnoreCase(userDetails.getActionType())) {
+            userDataModel.setChangePlatformResponse(buildPlatformResponse(userDetails));
+        }
+
+        return userDataModel;
+    }
+
+    private static ChangePlatformResponse buildPlatformResponse(ButtonActionWithParams userDetails) {
+        Map<String, Object> extraParameters = userDetails.getExtraParameters();
+        String mdn_auth_type = (null == extraParameters.get(MDN_AUTH_TYPE))? null:extraParameters.get(MDN_AUTH_TYPE).toString();
+
+        ChangePlatformResponse changePlatformResponse = new ChangePlatformResponse(userDetails.getPageType(),
+                userDetails.getTitle(), userDetails.getPresentationStyle());
+        changePlatformResponse.setApplicationContext(userDetails.getApplicationContext());
+        changePlatformResponse.setActionType(userDetails.getActionType());
+
+        AuthenticationForm authenticationForm = buildAuthenticationForm(mdn_auth_type, extraParameters);
+
+
+
+               /* new RememberMeAuthenticationForm(extraInfoTo.getH(),
+                extraInfoTo.getMdn(), extraInfoTo.getUserName(), extraInfoTo.getU(),
+                extraInfoTo.getM(),extraInfoTo.getMdnAuthType(),extraInfoTo.getSSOToken());
+*/
+        authenticationForm.setAuthenticationType(mdn_auth_type);
+
+        changePlatformResponse.setAuthenticationForm(authenticationForm);
+        changePlatformResponse.setExtraParams(userDetails.getExtraParameters());
+        changePlatformResponse.setRequiresRedirect(true);
+
+        return changePlatformResponse;
+    }
+
+
+    public static AuthenticationForm buildAuthenticationForm(String authenticationType,
+                                                             Map<String, Object> extraParameters) {
+        String username = (null == extraParameters.get(USER_NAME))? null:extraParameters.get(USER_NAME).toString();
+        String password = (null == extraParameters.get(PASSWORD))? null:extraParameters.get(PASSWORD).toString();
+        String h = (null == extraParameters.get(H))? null:extraParameters.get(H).toString();
+        String u = (null == extraParameters.get(U))? null:extraParameters.get(U).toString();
+        String m = (null == extraParameters.get(M))? null:extraParameters.get(M).toString();
+        String selected_login_type = (null == extraParameters.get(SELECTED_LOGIN_TYPE))? null:extraParameters.get(SELECTED_LOGIN_TYPE).toString();
+        String mdn_auth_type = (null == extraParameters.get(MDN_AUTH_TYPE))? null:extraParameters.get(MDN_AUTH_TYPE).toString();
+        String mdn = (null == extraParameters.get(MDN))? null:extraParameters.get(MDN).toString();
+        String ssotoken = (null == extraParameters.get(SSO_TOKEN))? null:extraParameters.get(SSO_TOKEN).toString();
+        if (ACCESS_MANAGER_AUTHENTICATION.equalsIgnoreCase(authenticationType)) {
+            return new SimpleAuthenticationForm(username,
+                    password, h,u,m );
+        }
+
+        if (AUTH_TYPE_REMEMBER_ME.equalsIgnoreCase(authenticationType)) {
+
+            return  new RememberMeAuthenticationForm(h, username
+                    , u, m, "HASH", mdn_auth_type,
+                    mdn, ssotoken);
+        }
+        return new TokenAuthenticationForm(ssotoken, mdn);
+    }
+
+}
+
+The multiUserModel is
+package com.vzw.mobilefirst.setup.models.signin;
+
+import android.os.Parcel;
+
+import com.vzw.mobilefirst.core.events.ResponseHandlingEvent;
+import com.vzw.mobilefirst.core.models.BaseResponse;
+import com.vzw.mobilefirst.core.models.BusinessError;
+import com.vzw.mobilefirst.setup.models.SetupBaseResponseModel;
+import com.vzw.mobilefirst.setup.models.SetupFooterModel;
+import com.vzw.mobilefirst.setup.models.SetupHeaderModel;
+import com.vzw.mobilefirst.setup.models.SetupPageModel;
+import com.vzw.mobilefirst.setup.views.fragments.MultiUserFragment;
+
+import java.util.Map;
+
+/**
+ * Created by mallakr on 2/29/2016.
+ */
+public class MultiUserModel extends SetupBaseResponseModel {
+
+
+    public MultiUserModel(SetupHeaderModel headerData,
+                          SetupPageModel pageData,
+                          SetupFooterModel footerData,
+                          BusinessError businessError,
+                          Map<String, BaseResponse> pageMap) {
+        super(headerData, pageData, footerData, businessError, pageMap);
+    }
+
+    @Override
+    public ResponseHandlingEvent buildResponseHandlingEven() {
+        return ResponseHandlingEvent.createEventToReplaceFragment(MultiUserFragment.newInstance(this), this);
+    }
+
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        super.writeToParcel(dest, flags);
+    }
+
+    protected MultiUserModel(Parcel in) {
+        super(in);
+    }
+
+    public static final Creator<MultiUserModel> CREATOR = new Creator<MultiUserModel>() {
+        @Override
+        public MultiUserModel createFromParcel(Parcel source) {
+            return new MultiUserModel(source);
+        }
+
+        @Override
+        public MultiUserModel[] newArray(int size) {
+            return new MultiUserModel[size];
+        }
+    };
+
+    @Override
+    public boolean requiresToBeSaveInCache() {
+        return true;
+    }
+}
+
+The multi user fragment is
+package com.vzw.mobilefirst.setup.views.fragments;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
+
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import com.google.gson.Gson;
+import com.vzw.android.component.ui.linearlistview.LinearListView;
+import com.vzw.common_utils.Constants;
+import com.vzw.hss.mvm.common.config.Config;
+import com.vzw.hss.mvm.common.config.MVMSettings;
+import com.vzw.hss.mvm.common.constants.MVMRCConstants;
+import com.vzw.hss.mvm.common.utils.PageControllerUtils;
+import com.vzw.mobilefirst.MobileFirstApplication;
+import com.vzw.mobilefirst.R;
+import com.vzw.mobilefirst.commons.assemblers.PlatformResponseConverter;
+import com.vzw.mobilefirst.commons.factories.NoNetworkDialogFragmentFactory;
+import com.vzw.mobilefirst.commons.net.resources.ApnResourceServiceRequestor;
+import com.vzw.mobilefirst.commons.utils.ResponseDeserializer;
+import com.vzw.mobilefirst.commons.utils.SharedPreferencesUtil;
+import com.vzw.mobilefirst.commons.views.activities.BaseActivity;
+import com.vzw.mobilefirst.commons.views.fragments.NoNetworkDialogFragment;
+import com.vzw.mobilefirst.commons.views.utils.CommonAppUtil;
+import com.vzw.mobilefirst.commonviews.events.ToolbarAlwaysShowEvent;
+import com.vzw.mobilefirst.core.models.Action;
+import com.vzw.mobilefirst.core.models.BaseResponse;
+import com.vzw.mobilefirst.core.models.ChangePlatformResponse;
+import com.vzw.mobilefirst.core.models.Credentials;
+import com.vzw.mobilefirst.core.models.OpenPageAction;
+import com.vzw.mobilefirst.core.models.OpenURLAction;
+import com.vzw.mobilefirst.core.models.RememberMeAuthenticationForm;
+import com.vzw.mobilefirst.core.models.SimpleAuthenticationForm;
+import com.vzw.mobilefirst.core.models.TokenAuthenticationForm;
+import com.vzw.mobilefirst.core.net.tos.DeviceMDNHashMap;
+import com.vzw.mobilefirst.core.net.tos.RememberMeHashMap;
+import com.vzw.mobilefirst.core.net.tos.Sso;
+import com.vzw.mobilefirst.core.net.tos.UserAuthenticateTokenHash;
+import com.vzw.mobilefirst.setup.models.SetupPageModel;
+import com.vzw.mobilefirst.setup.models.TabletErrorModel;
+import com.vzw.mobilefirst.setup.models.forgotpassword.SetUpSingleton;
+import com.vzw.mobilefirst.setup.models.signin.MultiUserModel;
+import com.vzw.mobilefirst.setup.models.signin.MultiUserPageModel;
+import com.vzw.mobilefirst.setup.models.signin.MvmPreferenceRepository;
+import com.vzw.mobilefirst.setup.models.signin.UserDataExtraInfoModel;
+import com.vzw.mobilefirst.setup.models.signin.UserDataModel;
+import com.vzw.mobilefirst.setup.net.request.ForgotPasswordRequestParams;
+import com.vzw.mobilefirst.setup.presenters.MultiUserPresenter;
+import com.vzw.mobilefirst.setup.presenters.SetupBasePresenter;
+import com.vzw.mobilefirst.setup.views.adapters.MultiUserListAdapter;
+import com.vzw.mobilefirst.ubiquitous.presenters.LaunchApplicationPresenter;
+import com.vzw.mobilefirst.ubiquitous.views.utils.FeedUtils;
+import com.vzw.utils.MonitoringUtils;
+import com.vzw.utils.Utils;
+import com.vzw.vds.ui.button.ButtonView;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import static com.vzw.mobilefirst.setup.views.activity.SetUpActivity.KEY_DEEPLINKING;
+import static com.vzw.mobilefirst.setup.views.activity.SetUpActivity.KEY_DEEPLINKING_EXTRA;
+import static com.vzw.mobilefirst.setup.views.activity.SetUpActivity.KEY_DEEPLINKING_PAGETYPE;
+import static com.vzw.mobilefirst.setup.views.activity.SetUpActivity.PERSIST_DEEPLINK_FALSE;
+
+//import android.os.Build;
+//import com.vzw.android.component.ui.RainbowDrawable;
+
+/**
+ * Created by mallakr on 2/22/2016.
+ */
+public class MultiUserFragment extends SetupFragment implements SetupBasePresenter.ServiceResponseListener,
+        SetupGraph {
+
+    public static final String REQUEST_PARAM_U = "u";
+    public static final String REQUEST_PARAM_H = "h";
+    public static final String REQUEST_PARAM_M = "m";
+    public static final String REQUEST_PARAM_INITIAL_LAUNCH = "Initial_Launch";
+    public static final String REQUEST_PARAM_DEVICE_MDN = "deviceMdn";
+    public static final String SSO_FAILED = "SSO_FAILED";
+    public static final String MDN_PARAMETER = "mdn";
+    public static final String SELECTED_LOGIN_TYPE_PARAMETER = "selectedLoginType";
+    public static final String REINITIALIZE_SESSION_PARAMETER = "reinitializeSession";
+    public static final String SSO_MVM_PARAMETER = "ssoMVM";
+
+    public static final String REMEMBER_ME = "rememberMe";
+    public static final String MOBILE_FIRST_SS = "mobileFirstSS";
+
+    public static final String COM_VZW_HSS_MYVERIZONTABLETLTE = "com.vzw.hss.myverizontabletlte";
+    public static final String TABLET_NOT_SUPPORTED = "tabletNotSupported";
+
+    private static final String TAG = MultiUserFragment.class.getSimpleName();
+    public static final String TABLET_LAUNCH_ERROR = "tabletLaunchError";
+    public static final String MY_VERIZON = "My Verizon";
+    public static final String PUSH = "push";
+    public static final String ICON_ALERT_RED = "icon_alert_red";
+    public static final String UNFORTUNATELY_WE_DO_NOT_SUPPORT_YOUR_ACCOUNT = "Unfortunately, we do not support your account";
+    public static final String VERIZONWIRELESS_COM = "verizonwireless.com";
+    public static final String HTTPS_VERIZONWIRELESS_COM = "https://verizonwireless.com";
+    public static final String PLEASE_VISIT = "Please visit";
+    public static final String MF_TABLET = "MFTablet";
+
+    MultiUserListAdapter adapter;
+
+    LinearListView userList;
+
+    UserDataModel selectedModel;
+
+    View rainbowLine;
+
+    @Inject
+    MultiUserPresenter presenter;
+
+    @Inject
+    LaunchApplicationPresenter launchApplicationPresenter;
+	
+	@Inject
+    MvmPreferenceRepository mvmPreferenceRepository;
+
+    @Inject
+    SharedPreferencesUtil sharedPreferencesUtil;
+    public static final String LAUNCH = "launch";
+    public static final String LAUNCH_START = "launchStart";
+
+
+    @Inject
+    protected LaunchApplicationPresenter mLaunchApplicationPresenter;
+
+    public static MultiUserFragment newInstance(MultiUserModel screenData) {
+        Bundle args = new Bundle();
+        args.putParcelable(SCREEN_INFO, screenData);
+        MultiUserFragment fragment = new MultiUserFragment();
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void injectFragment() {
+        MobileFirstApplication.getObjectGraph(getContext().getApplicationContext()).inject(this);
+        MonitoringUtils.processStartUUID = MonitoringUtils.genrateUUID();
+        MonitoringUtils.launchTime = System.currentTimeMillis();
+        MonitoringUtils.launchAppStartTime = System.currentTimeMillis();
+        MonitoringUtils.INSTANCE.logMonitoringEvents(LAUNCH, LAUNCH_START, String.valueOf(MonitoringUtils.launchTime), MonitoringUtils.processStartUUID, "first");
+
+    }
+
+    @Override
+    protected int getLayout() {
+        return R.layout.setup_multiuser;
+    }
+
+    @Override
+    protected void initViews(View rootView) {
+        super.initViews(rootView);
+        disableGlobalAnimation();
+
+        userList = (LinearListView) rootView.findViewById(R.id.userList);
+        getStickyEventBus().postSticky(new ToolbarAlwaysShowEvent(false));
+        //rainbowLine = rootView.findViewById(R.id.rainbow_line);
+
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+//            rainbowLine.setBackground(new RainbowDrawable(getContext()));
+//        } else {
+//            rainbowLine.setBackgroundDrawable(new RainbowDrawable(getContext()));
+//        }
+    }
+
+    @Override
+    protected void vdsPrimaryButtonLoaded(ButtonView primaryButton, Action primaryButtonAction) {
+        super.vdsPrimaryButtonLoaded(primaryButton, primaryButtonAction);
+    }
+
+    @Override
+    protected void vdsSecondaryButtonLoaded(ButtonView secondaryButton, Action secondaryButtonAction) {
+        super.vdsSecondaryButtonLoaded(secondaryButton, secondaryButtonAction);
+        if(secondaryButtonAction != null){
+            secondaryButton.setVdsButtonState(ButtonView.STATE_ACTIVATE);
+        }
+    }
+
+    @Override
+    public void onVdsPrimaryButtonClicked(View primaryButton) {
+        selectedModel = null;
+        super.onVdsPrimaryButtonClicked(primaryButton);
+    }
+
+    @Override
+    public <PageData extends SetupPageModel> void setupScreenData(PageData pageData) {
+
+
+        if (pageData != null) {
+
+            final MultiUserPageModel model = (MultiUserPageModel) pageData;
+
+            if (model.getUserList() != null) {
+                adapter = new MultiUserListAdapter(getContext(), model.getUserList());
+
+                userList.setAdapter(adapter);
+
+
+                userList.setOnItemClickListener(new LinearListView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(LinearListView parent, View view, int position, long id) {
+                        login(position, model);
+                    }
+                });
+            }
+
+        }
+
+    }
+
+    @Override
+    public void onLatestResponse(BaseResponse baseResponse) {
+        super.onLatestResponse(baseResponse);
+    }
+
+    private void login(int position, MultiUserPageModel model) {
+        selectedModel = model.getUserList().get(position);
+
+
+        if (selectedModel.getChangePlatformResponse() != null) {
+//            mLaunchApplicationPresenter.callInvalidateSessionForMVM();
+            if (Constants.PREPAID_PHONE.equalsIgnoreCase(selectedModel.getChangePlatformResponse().getApplicationContext())) {
+                // If Swich is coming from MF prepay the it will launch MD directly.
+                prePaySwitch();
+            } else if (Constants.PREPAID_MF_APPCONTEXT.equalsIgnoreCase(selectedModel.getChangePlatformResponse().getApplicationContext())) {
+                startMFPrepaidExperience(selectedModel.getChangePlatformResponse());
+            } else if (selectedModel.getChangePlatformResponse().getPageType().equalsIgnoreCase(PlatformResponseConverter.MF_POSTPAY_PAGE_TYPE) || selectedModel.getChangePlatformResponse().getPageType() == null
+                    || selectedModel.getChangePlatformResponse().getApplicationContext().equalsIgnoreCase(MOBILE_FIRST_SS)) {
+                startMFExperience(selectedModel.getChangePlatformResponse());
+            } else {
+                if(getActivity().getApplicationContext().getPackageName().equalsIgnoreCase(COM_VZW_HSS_MYVERIZONTABLETLTE)){
+                    displaytabletRedirectError((BaseActivity)getActivity());
+                }else {
+                   // redirectToMvm(selectedModel.getChangePlatformResponse());
+                    displayNoNetworkDialog();
+                }
+            }
+            return;
+        }
+        if(selectedModel
+                .getAction().getMessage()!=null && ((BaseActivity) getActivity()).getMDN()!=null && ((BaseActivity)getActivity()).getMDN().equalsIgnoreCase(selectedModel
+                .getAction().getMessage()) ){
+            sharedPreferencesUtil.savePlatform("Mobile_First");
+        }
+
+        SetUpSingleton.getInstance().setMultiUserMDN(selectedModel
+                .getAction().getMessage());
+        handleButtonAction(selectedModel.getAction());
+    }
+
+
+    private void displaytabletRedirectError(BaseActivity activity) {
+
+        if (activity != null && !activity.isFinishing()) {
+            FragmentManager fragmentManager = activity.getSupportFragmentManager();
+            TabletErrorModel tabletErrorModel = new TabletErrorModel(TABLET_LAUNCH_ERROR, MY_VERIZON, PUSH);
+            tabletErrorModel.setImageUrl(ICON_ALERT_RED);
+            tabletErrorModel.setTitle(UNFORTUNATELY_WE_DO_NOT_SUPPORT_YOUR_ACCOUNT);
+            OpenURLAction action = new OpenURLAction(TABLET_NOT_SUPPORTED, VERIZONWIRELESS_COM, MOBILE_FIRST_SS, PUSH, HTTPS_VERIZONWIRELESS_COM);
+            action.setTitlePrefix(PLEASE_VISIT);
+            action.setTitlePostfix("");
+            action.setActive(true);
+            action.setAppUrl(MF_TABLET);
+            tabletErrorModel.setOpenURLAction(action);
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.setCustomAnimations(R.anim.fade_in, R.anim.fade_out, R.anim.fade_in, R.anim.fade_out);
+            TabletErrorFragment fragment = (TabletErrorFragment) TabletErrorFragment.newInstance(tabletErrorModel);
+            transaction.replace(((BaseActivity)getActivity()).getFragmentContainerResID(), fragment, TABLET_LAUNCH_ERROR).commit();
+        }
+    }
+
+    private void prePaySwitch() {
+        MVMSettings.getInstance().saveSetting(MVMSettings.KEY_CUSTOMER_TYPE, MVMSettings.VALUE_PREPAY, true);
+
+        if (selectedModel.getChangePlatformResponse() != null && selectedModel.getChangePlatformResponse().getExtraParams() != null) {
+            switchToMDPrepay((BaseActivity)getActivity(), selectedModel.getChangePlatformResponse());
+        } else {
+            startPrepaidExperience((BaseActivity)getActivity(), selectedModel.getChangePlatformResponse());
+        }
+        return;
+    }
+
+
+    private List<DeviceMDNHashMap> getMDNHashList() {
+        List<DeviceMDNHashMap> hashList;
+        hashList = sharedPreferencesUtil.getDeviceMDNHashMap();
+        return hashList;
+    }
+
+    private List<RememberMeHashMap> getHashList() {
+
+        List<RememberMeHashMap> hashList;
+        hashList = sharedPreferencesUtil.getRememberMeHashMapList();
+
+        return hashList;
+    }
+    private List<UserAuthenticateTokenHash> getTokenHashList() {
+
+        List<UserAuthenticateTokenHash> tokenHashList;
+        tokenHashList = sharedPreferencesUtil.getUserAuthenticateMapList();
+
+        return tokenHashList;
+    }
+
+    private void startMFPrepaidExperience(ChangePlatformResponse platformResponse) {
+        OpenPageAction launchAppAction = new OpenPageAction("", platformResponse.getPageType(), platformResponse.getApplicationContext(), "");
+
+        if (platformResponse.getAuthenticationForm() instanceof TokenAuthenticationForm) {
+            TokenAuthenticationForm tokenAuthenticationForm = (TokenAuthenticationForm) platformResponse.getAuthenticationForm();
+
+            ArrayList<Sso> ssoList = new ArrayList<>();
+            Sso sso = new Sso(tokenAuthenticationForm.getMdn(), tokenAuthenticationForm.getSsoToken());
+            ssoList.add(sso);
+
+
+            launchApplicationPresenter.authenticateUsingToken(launchAppAction,ssoList,
+                    getMDNHashList(), getHashList(), getTokenHashList(),
+                    platformResponse.getExtraParams(), getDeepLinkParameters(),
+                    Utils.getImei(getActivity()),
+                    FeedUtils.getMDN(getActivity()),sharedPreferencesUtil.getSiteCatalystHash(), null);
+            ((BaseActivity) getActivity()).showProgressSpinner();
+            return;
+        }
+
+        if(platformResponse.getAuthenticationForm() instanceof SimpleAuthenticationForm) {
+            SimpleAuthenticationForm simpleAuthenticationForm = (SimpleAuthenticationForm) platformResponse.getAuthenticationForm();
+            boolean rememberMe = (null == platformResponse.getExtraParams().get(REMEMBER_ME))? false: (boolean) platformResponse.getExtraParams().get(REMEMBER_ME);
+            Credentials credentials = new Credentials(simpleAuthenticationForm.getUserName(), simpleAuthenticationForm.getPassword(), true, rememberMe);
+
+            launchApplicationPresenter.authenticateUsingCredentials(launchAppAction, credentials,
+                    sharedPreferencesUtil.getDeviceMDNHashMap(),sharedPreferencesUtil.getRememberMeHashMapList(),
+                    sharedPreferencesUtil.getUserAuthenticateMapList(),platformResponse.getPageType(),
+                    platformResponse.getExtraParams(),FeedUtils.getMDN(getActivity()),
+                    sharedPreferencesUtil.getSiteCatalystHash());
+            ((BaseActivity) getActivity()).showProgressSpinner();
+            return;
+        }
+
+    }
+
+    private Map<String, String> getDeepLinkParameters(){
+        try {
+            String jsonString = mvmPreferenceRepository.read(KEY_DEEPLINKING, null);
+            Map<String, String> smartLinkParamsMap = null;
+            if (jsonString != null) {
+                Gson gson = new Gson();
+                Map<String, String> map = gson.fromJson(jsonString, Map.class);
+                smartLinkParamsMap = new HashMap<String, String>();
+                if (map.get(KEY_DEEPLINKING_PAGETYPE) != null) {
+                    smartLinkParamsMap.put(Constants.PAGE_TYPE,map.get(KEY_DEEPLINKING_PAGETYPE));
+                }
+                if (map.get(KEY_DEEPLINKING_EXTRA) != null) {
+                    String smartParams = map.get(KEY_DEEPLINKING_EXTRA);
+                    CommonAppUtil.splitParams(smartParams, smartLinkParamsMap);
+                    if(smartParams.contains(PERSIST_DEEPLINK_FALSE)) {
+                        mvmPreferenceRepository.save(KEY_DEEPLINKING,null);
+                    }
+
+                }
+            }
+            return smartLinkParamsMap;
+        }catch (NullPointerException npe){
+            return null;
+        }catch (IndexOutOfBoundsException iob){
+            return null;
+        }
+    }
+
+
+    private void startMFExperience(ChangePlatformResponse platformResponse) {
+
+        OpenPageAction launchAppAction = new OpenPageAction("", platformResponse.getPageType(), MOBILE_FIRST_SS, "");
+
+        if (platformResponse.getAuthenticationForm() instanceof TokenAuthenticationForm) {
+            TokenAuthenticationForm tokenAuthenticationForm = (TokenAuthenticationForm) platformResponse.getAuthenticationForm();
+
+            ArrayList<Sso> ssoList = new ArrayList<>();
+            Sso sso = new Sso(tokenAuthenticationForm.getMdn(), tokenAuthenticationForm.getSsoToken());
+            ssoList.add(sso);
+
+
+            launchApplicationPresenter.authenticateUsingToken(launchAppAction,ssoList,
+                    getMDNHashList(), getHashList(),
+                    getTokenHashList(), platformResponse.getExtraParams(), getDeepLinkParameters(),
+                    Utils.getImei(getActivity()),
+                    FeedUtils.getMDN(getActivity()),sharedPreferencesUtil.getSiteCatalystHash(), null);
+            return;
+        }
+
+        if(platformResponse.getAuthenticationForm() instanceof SimpleAuthenticationForm) {
+            SimpleAuthenticationForm simpleAuthenticationForm = (SimpleAuthenticationForm) platformResponse.getAuthenticationForm();
+            boolean rememberMe = (null == platformResponse.getExtraParams().get(REMEMBER_ME))? false: (boolean) platformResponse.getExtraParams().get(REMEMBER_ME);
+            Credentials credentials = new Credentials(simpleAuthenticationForm.getUserName(), simpleAuthenticationForm.getPassword(), true, rememberMe);
+            launchApplicationPresenter.authenticateUsingCredentials(launchAppAction, credentials,
+                    sharedPreferencesUtil.getDeviceMDNHashMap(),sharedPreferencesUtil.getRememberMeHashMapList(),
+                    sharedPreferencesUtil.getUserAuthenticateMapList(),platformResponse.getPageType(),
+                    platformResponse.getExtraParams(),FeedUtils.getMDN(getActivity()),
+                    sharedPreferencesUtil.getSiteCatalystHash());
+            return;
+        }
+
+    }
+
+    private Bundle addExtraParams(ChangePlatformResponse platformResponse) {
+        Bundle bundle = new Bundle();
+        HashMap<String, Object> map = new HashMap<>();
+        if(platformResponse !=null  )
+            map = (HashMap<String, Object> )platformResponse.getExtraParams();
+        bundle.putSerializable("map", map);
+        return bundle;
+    }
+    private void switchToMDPrepay(BaseActivity appCompatActivity, ChangePlatformResponse changePlatformResponse) {
+
+        Intent intent = new Intent();
+        intent.setAction(PageControllerUtils.INTENT_ACTION_ACTIVITY_LAUNCH_MVM_HYBRID);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+
+        if (Config.isPostpayTest && Config.logging) {
+            intent.putExtra(MVMRCConstants.INFO_ENTERED, true);
+            intent.putExtra(MVMRCConstants.KEY_SERVER,MVMRCConstants.PREPAY_MD_URL);
+
+
+        }
+        intent.putExtra("extraparam", addExtraParams(changePlatformResponse));
+        intent.setPackage(requireActivity().getPackageName());
+        appCompatActivity.startActivity(intent);
+        appCompatActivity.finish();
+    }
+
+    private void startPrepaidExperience(BaseActivity appCompatActivity, ChangePlatformResponse platformResponse) {
+        Intent intent = new Intent();
+        intent.setAction(Constants.LAUNCH_MYVERIZON);
+        intent.putExtra(Constants.SOURCE_ID, Constants.SOURCE_ID_VALUE);
+        intent.putExtra(Constants.REQUEST_PAGE_TYPE, platformResponse.getPageType());
+        intent.putExtra(Constants.APPCONTEXT, platformResponse.getApplicationContext());
+        if (platformResponse.getAuthenticationForm()
+                instanceof SimpleAuthenticationForm) {
+            SimpleAuthenticationForm simpleAuthenticationForm = (SimpleAuthenticationForm) platformResponse.getAuthenticationForm();
+            intent.putExtra(MDN_PARAMETER, simpleAuthenticationForm.getUserName());
+            intent.putExtra(REQUEST_PARAM_U, simpleAuthenticationForm.getU());
+            intent.putExtra(REQUEST_PARAM_H, simpleAuthenticationForm.getHash());
+            intent.putExtra(REQUEST_PARAM_M, simpleAuthenticationForm.getM());
+        }
+        if (platformResponse.getAuthenticationForm() instanceof TokenAuthenticationForm) {
+            TokenAuthenticationForm tokenAuthenticationForm = (TokenAuthenticationForm) platformResponse.getAuthenticationForm();
+            intent.putExtra(Constants.REQUEST_SSO_FOR_MVM, tokenAuthenticationForm.getSsoToken());
+            intent.putExtra(Constants.EXTRA_MDN, tokenAuthenticationForm.getMdn());
+        }
+        if (platformResponse.getAuthenticationForm() instanceof RememberMeAuthenticationForm) {
+            RememberMeAuthenticationForm rememberMeAuthenticationForm = (RememberMeAuthenticationForm) platformResponse.getAuthenticationForm();
+            intent.putExtra(REQUEST_PARAM_DEVICE_MDN, rememberMeAuthenticationForm.getMdn());
+            intent.putExtra(SELECTED_LOGIN_TYPE_PARAMETER, rememberMeAuthenticationForm.getSelectedLoginType());
+            intent.putExtra(REINITIALIZE_SESSION_PARAMETER, Boolean.TRUE.toString());
+            intent.putExtra(REQUEST_PARAM_U, rememberMeAuthenticationForm.getU());
+            intent.putExtra(REQUEST_PARAM_H, rememberMeAuthenticationForm.getHash());
+            intent.putExtra(REQUEST_PARAM_M, rememberMeAuthenticationForm.getM());
+            intent.putExtra(MDN_PARAMETER, rememberMeAuthenticationForm.getMdn());
+            intent.putExtra(SSO_MVM_PARAMETER, rememberMeAuthenticationForm.getSsoToken());
+
+            intent.putExtra(Constants.REQUEST_PARAM_AUTH_TYPE, rememberMeAuthenticationForm.getAuthenticationType());
+
+        }
+        intent.setPackage(requireActivity().getPackageName());
+        appCompatActivity.startActivity(intent);
+        appCompatActivity.finish();
+    }
+
+    @Override
+    protected <T> T getRequestParams(String pageType) {
+
+        if (selectedModel != null) {
+            ForgotPasswordRequestParams params = new ForgotPasswordRequestParams();
+            UserDataExtraInfoModel extraInfoModel = selectedModel.getExtraInfoModel();
+
+            if (extraInfoModel != null) {
+                params.setMultiUserLoginFlow(true);
+                params.setMdn(extraInfoModel.getMdn());
+                params.setLoginType(extraInfoModel.getMdnAuthType());
+                if(extraInfoModel.getMdnAuthType().equalsIgnoreCase(SSO_FAILED)){
+                    ((BaseActivity)getActivity()).invalidateAllSSOTokens();
+                }
+            }
+
+            return (T) params;
+        }
+        return null;
+    }
+
+    @Override
+    protected Map<String, Object> getAdditionalInfoForAnalytics() {
+        HashMap<String, Object> analyticsInfo = new HashMap<>();
+        if (getPageType().equalsIgnoreCase(ResponseDeserializer.SETUP_MULTI_USER)) {
+            analyticsInfo.put(Constants.FLOW_NAME, "launch");
+        }
+        return analyticsInfo;
+    }
+
+    @Override
+    public MultiUserPresenter getPresenter() {
+        return presenter;
+    }
+
+    private void displayNoNetworkDialog() {
+
+        if (getActivity() != null && !getActivity().isFinishing()) {
+            FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+            NoNetworkDialogFragment noNetworkDialogFragment = (NoNetworkDialogFragment) fragmentManager.findFragmentByTag(NoNetworkDialogFragment.class.getSimpleName());
+            //if condition is to avoid the triggering the dialog twice when the first time app is launched, because this dialog is also triggered from the SplashFragment
+            if (noNetworkDialogFragment == null || !noNetworkDialogFragment.isAdded()) {
+                noNetworkDialogFragment = NoNetworkDialogFragmentFactory.buildWithTransferContentAndRestartAction(getActivity());
+                noNetworkDialogFragment.show(fragmentManager, NoNetworkDialogFragment.class.getSimpleName());
+                MobileFirstApplication.getLogHandler().d(TAG, "error redirecting to MVM");
+            }
+        } else {
+            Toast.makeText(getActivity().getApplicationContext(), "redirecting to MVM", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void redirectToMvm(ChangePlatformResponse changePlatformResponse) {
+
+        if(changePlatformResponse.getAuthenticationForm().getAuthenticationType().equalsIgnoreCase(SSO_FAILED)){
+            ((BaseActivity)getActivity()).invalidateAllSSOTokens();
+            handleButtonAction(getButtonAction(PRIMARY_BUTTON));
+            return;
+        }
+        sharedPreferencesUtil.savePlatform("");
+        Intent intent = new Intent();
+        if(Constants.PREPAID_PHONE.equalsIgnoreCase(changePlatformResponse.getApplicationContext())) {
+            intent.setAction(Constants.LAUNCH_MYVERIZON);
+            intent.putExtra(Constants.SOURCE_ID, Constants.SOURCE_ID_VALUE);
+            intent.putExtra(Constants.REQUEST_PAGE_TYPE, changePlatformResponse.getPageType());
+            intent.putExtra(Constants.APPCONTEXT, changePlatformResponse.getApplicationContext());
+            if (changePlatformResponse.getAuthenticationForm()
+                    instanceof SimpleAuthenticationForm) {
+                SimpleAuthenticationForm simpleAuthenticationForm = (SimpleAuthenticationForm) changePlatformResponse.getAuthenticationForm();
+                intent.putExtra(MDN_PARAMETER, simpleAuthenticationForm.getUserName());
+                intent.putExtra(REQUEST_PARAM_U, simpleAuthenticationForm.getU());
+                intent.putExtra(REQUEST_PARAM_H, simpleAuthenticationForm.getHash());
+                intent.putExtra(REQUEST_PARAM_M, simpleAuthenticationForm.getM());
+            }
+            if (changePlatformResponse.getAuthenticationForm() instanceof TokenAuthenticationForm) {
+                TokenAuthenticationForm tokenAuthenticationForm = (TokenAuthenticationForm) changePlatformResponse.getAuthenticationForm();
+                intent.putExtra(Constants.REQUEST_SSO_FOR_MVM, tokenAuthenticationForm.getSsoToken());
+                intent.putExtra(Constants.EXTRA_MDN, tokenAuthenticationForm.getMdn());
+            }
+            if (changePlatformResponse.getAuthenticationForm() instanceof RememberMeAuthenticationForm) {
+                RememberMeAuthenticationForm rememberMeAuthenticationForm = (RememberMeAuthenticationForm) changePlatformResponse.getAuthenticationForm();
+                intent.putExtra(REQUEST_PARAM_DEVICE_MDN, rememberMeAuthenticationForm.getMdn());
+                intent.putExtra(SELECTED_LOGIN_TYPE_PARAMETER, rememberMeAuthenticationForm.getSelectedLoginType());
+                intent.putExtra(REINITIALIZE_SESSION_PARAMETER, Boolean.TRUE.toString());
+                intent.putExtra(REQUEST_PARAM_U, rememberMeAuthenticationForm.getU());
+                intent.putExtra(REQUEST_PARAM_H, rememberMeAuthenticationForm.getHash());
+                intent.putExtra(REQUEST_PARAM_M, rememberMeAuthenticationForm.getM());
+                intent.putExtra(MDN_PARAMETER, rememberMeAuthenticationForm.getMdn());
+                intent.putExtra(SSO_MVM_PARAMETER, rememberMeAuthenticationForm.getSsoToken());
+
+                intent.putExtra(Constants.REQUEST_PARAM_AUTH_TYPE, rememberMeAuthenticationForm.getAuthenticationType());
+            }
+            intent.setPackage(requireActivity().getPackageName());
+            startActivity(intent);
+            getActivity().finish();
+        } else {
+            intent.setAction(Constants.LAUNCH_MVM_LEGACY);
+
+            if (changePlatformResponse.getAuthenticationForm() instanceof SimpleAuthenticationForm) {
+                SimpleAuthenticationForm simpleAuthenticationForm = (SimpleAuthenticationForm) changePlatformResponse.getAuthenticationForm();
+                intent.putExtra(Constants.REQUEST_PARAM_USER_ID, simpleAuthenticationForm.getUserName());
+                intent.putExtra(Constants.REQUEST_PARAM_PASSWORD, simpleAuthenticationForm.getPassword());
+                intent.putExtra(Constants.EXTRA_MDN, ApnResourceServiceRequestor.MDN);
+            }
+            if (changePlatformResponse.getAuthenticationForm() instanceof RememberMeAuthenticationForm) {
+                RememberMeAuthenticationForm rememberMeAuthenticationForm = (RememberMeAuthenticationForm) changePlatformResponse.getAuthenticationForm();
+                intent.putExtra(REQUEST_PARAM_DEVICE_MDN, rememberMeAuthenticationForm.getMdn());
+                intent.putExtra(SELECTED_LOGIN_TYPE_PARAMETER, rememberMeAuthenticationForm.getSelectedLoginType());
+                intent.putExtra(REINITIALIZE_SESSION_PARAMETER, Boolean.TRUE.toString());
+                intent.putExtra(REQUEST_PARAM_U, rememberMeAuthenticationForm.getU());
+                intent.putExtra(REQUEST_PARAM_H, rememberMeAuthenticationForm.getHash());
+                intent.putExtra(REQUEST_PARAM_M, rememberMeAuthenticationForm.getM());
+                intent.putExtra(MDN_PARAMETER, rememberMeAuthenticationForm.getMdn());
+                intent.putExtra(SSO_MVM_PARAMETER, rememberMeAuthenticationForm.getSsoToken());
+
+                intent.putExtra(Constants.REQUEST_PARAM_AUTH_TYPE, rememberMeAuthenticationForm.getAuthenticationType());
+
+            }
+            if (changePlatformResponse.getAuthenticationForm() instanceof TokenAuthenticationForm) {
+                TokenAuthenticationForm tokenAuthenticationForm = (TokenAuthenticationForm) changePlatformResponse.getAuthenticationForm();
+                intent.putExtra(Constants.REQUEST_SSO_FOR_MVM, tokenAuthenticationForm.getSsoToken());
+                intent.putExtra(Constants.EXTRA_MDN, tokenAuthenticationForm.getMdn());
+            }
+            intent.putExtra(REQUEST_PARAM_INITIAL_LAUNCH, Boolean.TRUE.toString());
+
+            intent.putExtra(Constants.REQUEST_PARAM_FLOW, Constants.SOURCE_ID_VALUE);
+            intent.putExtra(Constants.REQUEST_PARAM_LOGIN_TYPE, changePlatformResponse.getAuthenticationForm().getAuthenticationType());
+                intent.putExtra(Constants.REQUEST_PAGE_TYPE, changePlatformResponse.getPageType());
+
+            intent.putExtra(Constants.SOURCE_ID, Constants.SOURCE_ID_VALUE);
+            intent.setPackage(requireActivity().getPackageName());
+            startActivity(intent);
+            getActivity().finish();
+        }
+    }
+}
+R.layout.setup_multi_user is
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/multiUserHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/mf_white"
+        android:orientation="vertical">
+
+        <com.vzw.android.component.ui.MFTextView
+            android:id="@+id/title"
+            style="@style/MF_Text_Style.ListItemAccHeaderTitle"
+            android:layout_gravity="start"
+            android:textSize="25sp"
+            android:layout_marginLeft="@dimen/dimen_brand_refresh_margin_left"
+            android:layout_marginRight="@dimen/dimen_brand_refresh_margin_right"
+            android:layout_marginStart="@dimen/dimen_brand_refresh_margin_left"
+            android:layout_marginEnd="@dimen/dimen_brand_refresh_margin_right"
+            android:layout_marginTop="@dimen/view_margin_twenty_nine_dp"
+            android:gravity="start"
+            tools:text="Welcome back.\nPick your User ID." />
+
+        <com.vzw.android.component.ui.MFWebView
+            android:id="@+id/message"
+            style="@style/MF_Text_Style.ListItemAccHeaderMessage"
+            android:layout_gravity="start"
+            android:layout_marginStart="@dimen/dimen_brand_refresh_margin_left"
+            android:layout_marginEnd="@dimen/dimen_brand_refresh_margin_right"
+            android:layout_marginTop="@dimen/view_margin_fifteen_dp"
+            android:layout_marginBottom="@dimen/view_margin_fifteen_dp"/>
+
+        <!--<View-->
+        <!--android:id="@+id/rainbow_line"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="5dp"-->
+        <!--android:layout_alignParentTop="true"-->
+        <!--android:background="@color/blue"-->
+        <!--android:focusable="true"-->
+        <!--android:focusableInTouchMode="true"/>-->
+
+
+    </LinearLayout>
+
+    <com.vzw.android.component.ui.linearlistview.LinearListView
+        android:id="@+id/userList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/multiUserHeader"
+        android:divider="@color/divider_color"
+        android:dividerPadding="2dp"
+        android:orientation="vertical"
+        android:showDividers="none"
+        app:dividerThickness="1dp" />
+
+    <include
+        android:id="@+id/footerBtnContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/dimen_brand_refresh_margin_left"
+        android:layout_marginRight="@dimen/dimen_brand_refresh_margin_right"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        layout="@layout/mf_vds_base_footer_layout" />
+</RelativeLayout>
+
+this is just for your conetext dont give me any code just understand the process of how to write my code which i will tell you
