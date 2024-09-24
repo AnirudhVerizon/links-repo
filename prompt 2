@@ -1,0 +1,100 @@
+The below is the code for my bookmark button
+        ImageView toolbarImageView = findViewById(R.id.toolbar_image);
+        toolbarImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                  String response = "{\"ResponseInfo\":{\"errorCode\":\"00\",\"errorMessage\":\"SUCCESS\",\"topAlertTime\":0},\"Page\":{\"pageType\":\"Bookmark\",\"screenHeading\":\"BookMarks\",\"bookmarks\":[{\"actionType\":\"openPage\",\"pageType\":\"billOverview\",\"requestURL\":\"https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview\",\"extraParameters\":{\"pageTitle\":\"Number Lock\",\"browserUrl\":\"https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity\",\"locale\":\"EN\",\"flowName\":\"accountsettings\"}},{\"actionType\":\"openPage\",\"pageType\":\"billOverview\",\"requestURL\":\"https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview\",\"extraParameters\":{\"pageTitle\":\"Number Lock\",\"browserUrl\":\"https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity\",\"locale\":\"EN\",\"flowName\":\"accountsettings\"}},{\"actionType\":\"openPage\",\"pageType\":\"billOverview\",\"requestURL\":\"https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview\",\"extraParameters\":{\"pageTitle\":\"Number Lock\",\"browserUrl\":\"https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity\",\"locale\":\"EN\",\"flowName\":\"accountsettings\"}},{\"actionType\":\"openPage\",\"pageType\":\"billOverview\",\"requestURL\":\"https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview\",\"extraParameters\":{\"pageTitle\":\"Number Lock\",\"browserUrl\":\"https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity\",\"locale\":\"EN\",\"flowName\":\"accountsettings\"}},{\"actionType\":\"openPage\",\"pageType\":\"billOverview\",\"requestURL\":\"https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview\",\"extraParameters\":{\"pageTitle\":\"Number Lock\",\"browserUrl\":\"https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity\",\"locale\":\"EN\",\"flowName\":\"accountsettings\"}}],\"navigationBar\":{\"moleculeName\":\"navigationBar\",\"alwaysShowBackButton\":true,\"title\":\"Bookmarks\"}}}";
+                try {
+                    BaseResponse baseResponse = ResponseDeserializer.deserialize(response,"");
+                    basePresenter.publishResponseEvent(baseResponse);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                Toast.makeText(SetUpActivity.this,"Your page is bookmarked", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
+The below is the JSoN response 
+
+{
+  "ResponseInfo": {
+    "errorCode": "00",
+    "errorMessage": "SUCCESS",
+    "topAlertTime": 0
+  },
+  "Page": {
+    "pageType": "Bookmark",
+    "screenHeading": "BookMarks",
+    "bookmarks": [
+      {
+        "actionType": "openPage",
+        "pageType": "billOverview",
+        "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview",
+        "extraParameters": {
+          "pageTitle": "Number Lock",
+          "browserUrl": "https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity",
+          "locale": "EN",
+          "flowName": "accountsettings"
+        }
+      },
+      {
+        "actionType": "openPage",
+        "pageType": "billOverview",
+        "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview",
+        "extraParameters": {
+          "pageTitle": "Number Lock",
+          "browserUrl": "https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity",
+          "locale": "EN",
+          "flowName": "accountsettings"
+        }
+      },
+      {
+        "actionType": "openPage",
+        "pageType": "billOverview",
+        "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview",
+        "extraParameters": {
+          "pageTitle": "Number Lock",
+          "browserUrl": "https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity",
+          "locale": "EN",
+          "flowName": "accountsettings"
+        }
+      },
+      {
+        "actionType": "openPage",
+        "pageType": "billOverview",
+        "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview",
+        "extraParameters": {
+          "pageTitle": "Number Lock",
+          "browserUrl": "https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity",
+          "locale": "EN",
+          "flowName": "accountsettings"
+        }
+      },
+      {
+        "actionType": "openPage",
+        "pageType": "billOverview",
+        "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview",
+        "extraParameters": {
+          "pageTitle": "Number Lock",
+          "browserUrl": "https://www.verizon.com/digital/nsa/secure/ui/acct/profile/security/portsecurity",
+          "locale": "EN",
+          "flowName": "accountsettings"
+        }
+      }
+    ],
+    "navigationBar": {
+      "moleculeName": "navigationBar",
+      "alwaysShowBackButton": true,
+      "title": "Bookmarks"
+    }
+  }
+}
+
+now upon clicking the bookmark icon I have successfully mapped the converter
+ public static final String BOOKMARK="Bookmark";
+
+
+RESPONSE_MAPPING.put(BOOKMARK,BookMarkConverter.class);
+
+now i need you to write me a converter,model,fragment,layout file in kotlin. such that when i click on the ImageView toolbarImageView a list of items should be displayed that i can modify later
