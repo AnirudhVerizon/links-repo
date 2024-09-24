@@ -1,4 +1,5 @@
-Now I am about to give you a sample of all the files required to create a ui fragment in my codebase using MVP architecture
+Now I am about to give you a sample of all the files required to create a ui fragment in my codebase using MVP architecture. Do not give me any code until I tell you to these are just for your context
+
 First We need toi map page type in the JSON file with a converter
 public static final String SETUP_MULTI_USER = "multiUserSignIn";
 RESPONSE_MAPPING.put(SETUP_MULTI_USER, MultiUserConverter.class);
