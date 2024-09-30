@@ -1,0 +1,26 @@
+if ((model.text!!.trim()).length > 1) {
+                                handler.removeCallbacks(runnable)
+                                inputDelay?.let {
+                                    handler.postDelayed(runnable, inputDelay)
+                                } ?: kotlin.run {
+                                    getOverlayData()
+                                }
+                            }
+
+                    SearchTextFieldAtomEnum.EDIT_TEXT_ON_FOCUS -> {
+                        if (TextUtils.isEmpty(model.text)) {
+                            showSearchOverlay()
+                        } else {
+                            if ((model.text!!.trim()).length > 1) {
+                                handler.removeCallbacks(runnable)
+                                inputDelay?.let {
+                                    handler.postDelayed(runnable, inputDelay)
+                                } ?: kotlin.run {
+                                    getOverlayData()
+                                }
+                            }
+                        }
+                        return
+                    }
+
+
