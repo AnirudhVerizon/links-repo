@@ -1,0 +1,46 @@
+private fun saveRecentSearches(searchText: String) {
+        val searchData = sharedPreferencesUtil?.nSearchList
+        if (searchData?.isEmpty() == true) {
+            sharedPreferencesUtil?.nSearchList = "${searchText},"
+        } else {
+            val newSearchData = StringBuilder(searchText)
+            searchData?.split(",")?.filter { it != searchText }?.forEach {
+                newSearchData.append(",$it")
+            }
+            sharedPreferencesUtil?.nSearchList = newSearchData.toString()
+        }
+    }
+
+    private fun showRecentSearches() {
+        overlayView?.removeAllViews()
+        overlayView?.visibility = View.VISIBLE
+        searchListTemplateView?.visibility = View.GONE
+        val searchData = sharedPreferencesUtil?.nSearchList
+        if (searchData?.isEmpty() == true) {
+            context?.let {
+                overlayView?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        it,
+                        R.color.overlay_background
+                    )
+                )
+            }
+            return
+        }
+        searchData?.split(",")?.forEach { searchText ->
+            val view = MFTextView(this.context)
+            view.textSize = 16f
+            view.text = searchText
+            val params = LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT)
+            params.setMargins(0,16,0,0)
+            view.layoutParams = params
+            overlayView?.addView(view)
+            context?.let {
+                overlayView?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        it,
+                        R.color.white
+                    )
+                )
+            }
+        }
