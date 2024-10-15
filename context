@@ -1,0 +1,20 @@
+
+                    //Called when User click done button or search icon typing
+                    SearchTextFieldAtomEnum.ON_SEARCH -> {
+                        if (TextUtils.isEmpty(model.text.toString().trim()) || (!TextUtils.isEmpty(
+                                model.text.toString().trim()
+                            ) && model.text!!.length < 2)
+                        ) {
+                            return
+                        }
+                        if (searchListTemplateView?.visibility == View.VISIBLE) {
+                            searchListTemplateView?.visibility = View.GONE
+                            searchListTemplateView?.isFocusable = false
+                            overlayView?.visibility = View.GONE
+                        }
+                        saveRecentSearches(model.text.toString().trim())
+                        action =
+                            (this@AtomicSearchMoleculeListFragment.pageData as? AtomicSearchListMoleculePageModel)?.searchDoneAction
+                        action?.analyticsData?.put(KEY_SEARCH_TERM, model.text.toString().trim())
+
+                    }
