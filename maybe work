@@ -1,0 +1,38 @@
+SearchTextFieldAtomEnum.ON_SEARCH -> {
+                        if (TextUtils.isEmpty(model.text.toString().trim()) || (!TextUtils.isEmpty(
+                                model.text.toString().trim()
+                            ) && model.text!!.length < 2)
+                        ) {
+                            return
+                        }
+                        if (searchListTemplateView?.visibility == View.VISIBLE) {
+                            searchListTemplateView?.visibility = View.GONE
+                            searchListTemplateView?.isFocusable = false
+                            overlayView?.visibility = View.GONE
+                        }
+                        saveRecentSearches(model.text.toString().trim())
+                        action =
+                            (this@AtomicSearchMoleculeListFragment.pageData as? AtomicSearchListMoleculePageModel)?.searchDoneAction
+                        action?.analyticsData?.put(KEY_SEARCH_TERM, model.text.toString().trim())
+
+                    }
+                }
+
+            } else if (it.model is TagMoleculeModel) {
+                val model: TagMoleculeModel = it.model as TagMoleculeModel
+                action = model.action
+                if (searchListTemplateView?.visibility == View.VISIBLE) {
+                    searchListTemplateView?.visibility = View.GONE
+                    searchListTemplateView?.isFocusable = false
+                    overlayView?.visibility = View.GONE
+                }
+            } else {
+                super.onChanged(it)
+                return
+            }
+
+            action?.let { actionModel ->
+                executeAction(actionModel, validRequestParams, it.requestParams)
+            }
+        }
+    }
