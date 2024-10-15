@@ -1,0 +1,11 @@
+                    action?.let { actionModel ->
+                        executeAction(actionModel, true, hashMapOf(KEY_SEARCH_TERM to searchText.trim()))
+                    }
+
+
+{
+  "RequestParams": {
+    "searchInput": "pixel",
+    "currentPage": "Done"
+  }
+}
