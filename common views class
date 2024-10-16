@@ -1,0 +1,220 @@
+open class SearchTextFieldAtomView : RelativeLayout , StyleApplier<SearchTextFieldAtomModel> , View.OnFocusChangeListener , TextWatcher,FormView {
+    private var mModel: SearchTextFieldAtomModel? = null
+    private val blockCharacterSet = "*"
+    override var atomicFormValidator: AtomicFormValidator? = null
+    var img_Search : ImageView? = null
+    var iv_mic: ImageView?= null
+    var search_text_field : TextInputEditText? = null
+    var search_store_container : RelativeLayout? = null
+    var button : ButtonAtomView? = null
+    var img_close :  ImageView? = null
+    var imgError:ImageView?=null
+    constructor(context: Context) : this(context , null)
+    constructor(context: Context , attrs: AttributeSet?) : this(context , attrs , 0)
+    constructor(context: Context , attrs: AttributeSet? , defStyleAttr: Int) : super(context , attrs , defStyleAttr) {
+        initView(context)
+    }
+
+    private fun initView(context: Context) {
+        atomicFormValidator= this.atomicFormValidator
+        View.inflate(context , R.layout.search_text_field_layout , this)
+
+        img_Search = findViewById(R.id.img_Search)
+        search_text_field = findViewById(R.id.search_text_field)
+        search_store_container = findViewById(R.id.rlsearchstore)
+        button = findViewById(R.id.button)
+        iv_mic= findViewById(R.id.iv_mic)
+        img_close = findViewById(R.id.img_close)
+        imgError=findViewById(R.id.imgError)
+        search_text_field?.onFocusChangeListener = this
+        search_text_field?.addTextChangedListener(this)
+        search_text_field?.isFocusableInTouchMode = false //Do not keep focus unless user taps on it
+        search_text_field?.isFocusable = false //Do not keep focus unless user taps on it
+        val filter = InputFilter { source, start, end, dest, dstart, dend ->
+            for (i in start until end) {
+                if (source != null && blockCharacterSet.contains(("" + source[i]))) {
+                    return@InputFilter ""
+                }
+            }
+            null
+        }
+        search_text_field?.filters = arrayOf(filter)
+    }
+
+
+    override fun applyStyle(model: SearchTextFieldAtomModel) {
+        applyCommonStyles(model)
+        if (model.isHidden){
+            this.visibility = View.GONE
+        } else {
+            this.visibility = View.VISIBLE
+        }
+        mModel = model
+        search_text_field?.inputType = getInputType(model)
+        search_text_field?.isFocusableInTouchMode = true //keep focus when user taps on it
+        search_text_field?.isFocusable = true //keep focus when user taps on it
+        model.text?.let { search_text_field?.setText(model.text) }
+        model.placeholder?.let { search_text_field?.hint = model.placeholder }
+        img_Search?.setOnClickListener {
+            updateLiveData(SearchTextFieldAtomEnum.ON_SEARCH)
+        }
+        //for VTS
+        iv_mic?.setOnClickListener{
+            updateLiveData(SearchTextFieldAtomEnum.ON_VOICE)
+        }
+         ViewCompat.setAccessibilityDelegate(img_Search!!, object : AccessibilityDelegateCompat() {
+            override fun onInitializeAccessibilityNodeInfo(
+                host: View,
+                info: AccessibilityNodeInfoCompat
+            ) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.roleDescription = ""
+                info.removeAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK)
+                info.isClickable = false            }
+        })
+        if (!model.searchIconClickable) {
+            img_Search?.isClickable = false
+        }
+        img_close?.setOnClickListener {
+            search_text_field?.setText("")
+            img_close?.visibility=View.GONE
+            if (model.button?.title != null)
+                button?.visibility = View.VISIBLE
+            else
+                button?.visibility = View.GONE
+            updateLiveData(SearchTextFieldAtomEnum.ON_CLOSE)
+            search_text_field?.clearFocus()
+        }
+
+        search_text_field?.setOnEditorActionListener(OnEditorActionListener { view , actionId , keyEvent ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT) {
+                updateLiveData(SearchTextFieldAtomEnum.ON_SEARCH)
+                true
+            } else false
+        })
+        model.button?.let { button?.applyStyle(it) }
+
+
+    }
+
+    override fun afterTextChanged(p0: Editable?) {
+        updateLiveData(SearchTextFieldAtomEnum.AFTER_TEXT_CHANGED)
+    }
+
+    override fun beforeTextChanged(p0: CharSequence? , p1: Int , p2: Int , p3: Int) {
+    }
+
+    override fun onTextChanged(p0: CharSequence? , p1: Int , p2: Int , p3: Int) {
+        //img_close.visibility=View.VISIBLE
+    }
+
+    override fun onFocusChange(p0: View?,focus: Boolean) {
+        if (focus) {
+            button?.visibility = View.GONE
+            img_close?.visibility = View.VISIBLE
+            updateLiveData(SearchTextFieldAtomEnum.EDIT_TEXT_ON_FOCUS)
+        }
+    }
+
+this is the enum class
+enum class SearchTextFieldAtomEnum {
+    AFTER_TEXT_CHANGED,
+    ON_CLOSE,
+    ON_SEARCH,
+    EDIT_TEXT_ON_FOCUS,
+    ON_VOICE
+}
+
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/coolGray1">
+
+
+    <RelativeLayout
+        android:id="@+id/rlsearchstore"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/search_text_field_height"
+        android:background="@color/coolGray1">
+
+        <ImageView
+            android:id="@+id/img_Search"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_twenty_dp"
+            android:contentDescription="Search Icon"
+            android:src="@drawable/ic_icon_search" />
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="@dimen/view_height_one_dp"
+            android:layout_height="@dimen/view_height_twenty_eight_dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_toEndOf="@id/img_Search"
+            android:background="@color/black"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:importantForAccessibility="no" />
+
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/search_text_field"
+            style="@style/EditTextAtomStyle"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_toStartOf="@id/imgError"
+            android:layout_toEndOf="@id/divider"
+            android:background="@color/transparent"
+            android:gravity="center_vertical"
+            android:imeOptions="actionSearch" />
+
+        <com.vzw.hss.myverizon.atomic.views.atoms.ButtonAtomView
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_marginEnd="@dimen/view_margin_twenty_dp"
+            android:visibility="gone" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_toLeftOf="@+id/img_close"
+            android:id="@+id/imgError"
+            android:src="@drawable/edit_text_error_drawable"
+            android:contentDescription="error"
+            android:visibility="gone"
+            />
+
+        <ImageView
+            android:id="@+id/img_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_marginEnd="40dp"
+            android:contentDescription="Clear"
+            android:src="@drawable/ic_icon_close"
+            android:layout_toLeftOf="@+id/iv_mic"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/iv_mic"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_micropho"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"/>
+    </RelativeLayout>
+</RelativeLayout>
