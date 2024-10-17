@@ -96,3 +96,29 @@ SearchTextFieldAtomEnum.ON_VOICE -> {
                 // Handle the error (Toast, log, etc.)
             }
         }
+
+
+
+
+
+
+recent searches
+private fun saveRecentSearches(searchText: String) {
+        val searchData = sharedPreferencesUtil?.nSearchList
+        if (searchData?.isEmpty() == true) {
+            sharedPreferencesUtil?.nSearchList = "$searchText,"
+        } else {
+
+            val newSearchData = StringBuilder(searchText)
+            searchData?.split(",")?.filter { it.isNotEmpty() && it != searchText }?.forEach {
+                newSearchData.append(",$it")
+            }
+            sharedPreferencesUtil?.nSearchList = newSearchData.toString()
+
+            val maxSearches = 5
+            val limitedSearchData = newSearchData.toString().split(",").take(maxSearches).joinToString(",")
+            sharedPreferencesUtil?.nSearchList= "$limitedSearchData,"
+        }
+
+
+    }
