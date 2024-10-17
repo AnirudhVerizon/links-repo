@@ -1,0 +1,13 @@
+                        val action = (this@AtomicSearchMoleculeListFragment.pageData as? AtomicSearchListMoleculePageModel)?.searchDoneAction
+                        action?.analyticsData?.put(KEY_SEARCH_TERM, spokenText)
+                        Log.d("SearchAction", "$spokenText")
+
+
+
+                        action?.let { actionModel ->
+                            val requestParams = hashMapOf<String, Any>(
+                                "searchInput" to spokenText,
+                                "currentPage" to "Done"
+                            )
+                            executeAction(actionModel, true, requestParams)
+                        }
