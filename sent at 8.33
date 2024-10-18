@@ -24,3 +24,36 @@ saveRecentSearches(searchText.trim())
     "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 16&lid=sayt&sayt=iphon*&src=wireless",
     "screenHeading": "Search"
   }
+
+
+{
+  "InitialParams": {
+    "appName": "com.vzw.hss.myverizon",
+    "appVersion": "20.3.1",
+    "biometricStatus": "Enrolled",
+    "biometricType": "BOTH",
+    "deviceName": "o1s",
+    "feedTestFlag": false,
+    "formFactor": "handset",
+    "arSupported": true,
+    "isPreInstalled": false,
+    "model": "SM-G991B",
+    "no_sim_present": true,
+    "osName": "Android",
+    "osVersion": "14",
+    "pushAuthorizationStatus": 1,
+    "sourceID": "",
+    "sourceServer": "None",
+    "testFlagMap": {
+      "isTestClient": true,
+      "isPassiveEnv": false
+    },
+    "timeZone": "IST",
+    "trialUserHash": "",
+    "wifi": true
+  },
+  "RequestParams": {
+    "browserUrl": "https://www.verizon.com/onesearch/search?q=Motorola edge+ 5G UW&lid=sayt&sayt=moto*&src=wireless",
+    "screenHeading": "Search"
+  }
+}
