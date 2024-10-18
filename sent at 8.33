@@ -17,3 +17,10 @@
 
 
 saveRecentSearches(searchText.trim())
+
+
+
+  "RequestParams": {
+    "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 16&lid=sayt&sayt=iphon*&src=wireless",
+    "screenHeading": "Search"
+  }
